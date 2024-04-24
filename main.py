@@ -52,8 +52,8 @@ password = driver.find_element(By.CSS_SELECTOR,
 
 
 token = "7129846223:AAFd5Eqmf3oT8wNrYhDWMlUvsDVCaLRMPkw"
-
-
+count = 0
+namechange = 0
 # 붙여넣기로 로그인
 def copy_input(element, input):
     pyperclip.copy(input)
@@ -82,20 +82,20 @@ def find_id(team, id):
     address = "https://weverse.io/"+team+"/profile/"+id
     driver.get(address)
     try:
-        time.sleep(5)
+        time.sleep(2)
         test = driver.find_element(By.CSS_SELECTOR,"#root > div.App > div > div.body > div.CommunityNavigationLayoutView_content__\+9zMw > div > div.CommunityProfileContainerView_content__jvm33 > div.CommunityProfileInfoView_container__tirO7 > div.CommunityProfileInfoView_content_wrap__Ag9Gn > div.CommunityProfileInfoView_name_wrap__UtUx5 > h3")
     except:
         print('============= 닉네임 변경된경우 element를 찾지못함 ============= ')
         time.sleep(5)
         test = driver.find_element(By.CSS_SELECTOR,
                                    "#root > div.App > div > div.body > div.CommunityNavigationLayoutView_content__\+9zMw > div > div.CommunityProfileContainerView_content__jvm33 > div.CommunityProfileInfoView_container__tirO7 > div.CommunityProfileInfoView_content_wrap__Ag9Gn > div.CommunityProfileInfoView_name_wrap__UtUx5 > h3")
-    return test.text
 
+    return test.text
 
 # 최근 알림 8건을 가져와 이전 알림과 비교해 새 알림이 있는지 확인
 def new_notification(noti, data):
     new_noti = []
-
+    check = []
     cnt = 0
     for i in data:
         id = ''
@@ -122,10 +122,17 @@ def new_notification(noti, data):
                         #print(j)
                         # 닉네임 업데이트
                         db.update_nickname(nickname, j)
+                        time.sleep(1)
+                        address = "https://weverse.io/"
+                        driver.get(address)
+                        global count
+                        count = 0
+                        global namechange
+                        namechange = 'Y'
                         break
             else:
                 id = temp
-                #print(temp)
+
 
             if 'live' in i.attrs['href']:
                 x = i.get_text(strip=True).replace('artist', '')
@@ -140,7 +147,6 @@ def new_notification(noti, data):
                 #print("샵 광고 skip")
                 #content = x[x.index("댓글")::].replace('\n', '')
                 1
-
             else:
                 x = i.get_text(strip=True).replace('artist', '')
                 #print(x[x.index("포스트")::])
@@ -156,25 +162,13 @@ def new_notification(noti, data):
             elif '댓글' in x:
                 #print(x[x.index("댓글에")::])
                 content = x[x.index("댓글에")::].replace('\n', '')
-
-
-
-        #print(id, content)
+        #잠깐 주석
+        #print(id, content, x)
         db.insert_noti(id, content, x)
 
         if id+content != '':
             new_noti.insert(0, id+content)
             cnt += 1
-        #print()
-
-    #new_noti = new_noti[::-1]
-    #print('+++++++++++++++++++++++++++++++++')
-    # new_noti에서 noti를 빼야함
-    #print(new_noti)
-    #print(noti)
-    #print(len(new_noti), len(noti))
-    #print('+++++++++++++++++++++++++++++++++')
-
 
     if set(noti) == set(new_noti):
         #print('noti와 new noti가 같음')
@@ -193,21 +187,31 @@ async def send_msg(id, msg):
         await bot.send_message(id, msg)
 
 
-cnt = 0
+
 time.sleep(2)
 noti_button = driver.find_element(By.CSS_SELECTOR,
                                   "#root > div.App > div > div.GlobalLayoutView_header__1UkFL > header > div > div.HeaderView_action__QDUUD > div > button")
 
+
+
 while 1:
     # 데이터 스크래핑 시작
     time.sleep(1)
-    if cnt == 0:
+    #print('닉네임바뀌었는지:', namechange)
+    if namechange == 'Y':
+        time.sleep(2)
+        noti_button = driver.find_element(By.CSS_SELECTOR,
+                                          "#root > div.App > div > div.GlobalLayoutView_header__1UkFL > header > div > div.HeaderView_action__QDUUD > div > button")
+    if count == 0 or namechange == 'Y':
         try:
+            time.sleep(1)
             noti_button.click()
+            namechange = 0
         except:
             print('=========== noti_button.click()의 element를 못찾는 에러 발생하여 except문 실행 ==========')
             time.sleep(5)
             noti_button.click()
+            namechange = 0
     else:
         try:
             time.sleep(1)
@@ -215,11 +219,14 @@ while 1:
             noti_button.click()
         except:
             print('=========== noti_button.click() * 2의 element를 못찾는 에러 발생하여 except문 실행 ==========')
+            noti_button = driver.find_element(By.CSS_SELECTOR,
+                                              "#root > div.App > div > div.GlobalLayoutView_header__1UkFL "
+                                              "> header > div > div.HeaderView_action__QDUUD "
+                                              "> div.HeaderNotificationWrapperView_notification__hCLgg > button")
             time.sleep(5)
             noti_button.click()
             time.sleep(5)
             noti_button.click()
-
     time.sleep(2)
     try:
         data = driver.find_element(By.CSS_SELECTOR,
@@ -260,9 +267,9 @@ while 1:
 
     #print("=========================================")
     if temp == 0 or len(temp) == 0:
-        print('새 알림이 없습니다.', cnt, time.strftime('%Y.%m.%d %H:%M:%S'))
+        print('새 알림이 없습니다.', count, time.strftime('%Y.%m.%d %H:%M:%S'))
     else:
-        print('새 알림이 있습니다.', cnt, time.strftime('%Y.%m.%d %H:%M:%S'))
+        print('새 알림이 있습니다.', count, time.strftime('%Y.%m.%d %H:%M:%S'))
         for i in temp:
             print(i)
             #print(i[:32])
@@ -271,5 +278,5 @@ while 1:
             for j in temp2:
                 print('메시지보낼 이용자:', j)
                 asyncio.run(send_msg(j, db.select_origin_content(i)))
-    cnt += 1
+    count += 1
     time.sleep(4)
