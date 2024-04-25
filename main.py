@@ -1,5 +1,4 @@
 import time
-
 import pyperclip
 import subprocess
 from selenium import webdriver
@@ -13,9 +12,6 @@ import telegram
 import asyncio
 import db
 from webdriver_manager.chrome import ChromeDriverManager as ChromeDriverManager
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1024, 768))
-# display.start()
 
 
 # 자동화 메시지 방지
@@ -45,10 +41,10 @@ driver.get(
 
 time.sleep(1)
 email = driver.find_element(By.CSS_SELECTOR,
-                            '#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-ed52fcbe-0.dFIKnH > div.sc-ed52fcbe-8.eoxMAH > input')
+                            '#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-ed52fcbe-0.dFIKnH > div.sc-ed52fcbe-8.eoxMAH > input').send_keys("5845434@gmail.com")
 time.sleep(1)
 password = driver.find_element(By.CSS_SELECTOR,
-                               '#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-d0f94a43-0.bCrkf > div > div.sc-ed52fcbe-8.eoxMAH > input')
+                               '#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-d0f94a43-0.bCrkf > div > div.sc-ed52fcbe-8.eoxMAH > input').send_keys("wldms6564!")
 
 
 token = "7129846223:AAFd5Eqmf3oT8wNrYhDWMlUvsDVCaLRMPkw"
@@ -62,20 +58,20 @@ def copy_input(element, input):
     element.send_keys(Keys.CONTROL, 'v')
 
 
+# try:
+#     login_button = driver.find_element(By.CSS_SELECTOR,
+#                                        "#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-58a7e114-0.cqmXWr > button")
+#     login_button.click()
 try:
+    #print('=====except=======문')
+    # copy_input(email, "5845434@gmail.com")
+    # copy_input(password, "wldms6564!")
     login_button = driver.find_element(By.CSS_SELECTOR,
                                        "#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-58a7e114-0.cqmXWr > button")
     login_button.click()
+
 except:
-    copy_input(email, "5845434@gmail.com")
-    copy_input(password, "wldms6564!")
-    login_button = driver.find_element(By.CSS_SELECTOR,
-                                       "#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-58a7e114-0.cqmXWr > button")
-    login_button.click()
-
-
-
-
+    1
 
 # 닉네임이 변경된경우 프로필 페이지에서 새 닉네임 찾기
 def find_id(team, id):
@@ -94,23 +90,37 @@ def find_id(team, id):
 
 # 최근 알림 8건을 가져와 이전 알림과 비교해 새 알림이 있는지 확인
 def new_notification(noti, data):
-    new_noti = []
-    check = []
+    new_data = []
     cnt = 0
     for i in data:
+        if cnt == 6:
+            break
+        # 라이브, 공지, 미디어, 샵 제외
+        if 'notice' not in i.attrs['href']:
+            if 'media' not in i.attrs['href']:
+                if 'live' not in i.attrs['href']:
+                    if 'shop' not in i.attrs['href']:
+                        #print(i.attrs['href'])
+                        #print(i.get_text(strip=True))
+                        new_data.append([i.attrs['href'], i.get_text(strip=True)])
+                        cnt += 1
+    #print('=====================================')
+    new_data = new_data[1::]
+    new_data = new_data[::-1]
+
+    new_noti = []
+    check = []
+
+    for i in new_data:
         id = ''
         content = ''
         x = ''
-        if cnt == 5:
-            break
-
         # 포스트
-        if 'artist' in i.attrs['href'] or 'fanpost' in i.attrs['href']:
-            team = i.attrs['href'].split('/')[1]
-            nickname = i.get_text(strip=True)[1::].split('artist')[0]
+        if 'artist' in i[0] or 'fanpost' in i[0]:
+            team = i[0].split('/')[1]
+            nickname = i[1][1::].split('artist')[0]
             #print(team, nickname)
             temp = db.select_id(team, nickname)
-            #이부분 순서 거꾸로되게 수정필요
             #print(team, nickname, 'temp:', temp)
             # 닉네임이 변경된 경우
             if temp == 0:
@@ -133,29 +143,19 @@ def new_notification(noti, data):
             else:
                 id = temp
 
-
-            if 'live' in i.attrs['href']:
-                x = i.get_text(strip=True).replace('artist', '')
-                #print(x[x.index("LIVE")::])
-                content = x[x.index("LIVE")::].replace('\n', '')
-            elif 'comment' in i.attrs['href']:
-                x = i.get_text(strip=True).replace('artist', '')
+            if 'comment' in i[0]:
+                x = i[1](strip=True).replace('artist', '')
                 #print(x[x.index("댓글")::])
                 content = x[x.index("댓글")::].replace('\n', '')
-            elif 'shop' in i.attrs['href']:
-                #x = i.get_text(strip=True).replace('artist', '')
-                #print("샵 광고 skip")
-                #content = x[x.index("댓글")::].replace('\n', '')
-                1
             else:
-                x = i.get_text(strip=True).replace('artist', '')
+                x = i[1].replace('artist', '')
                 #print(x[x.index("포스트")::])
                 content = x[x.index("포스트")::].replace('\n', '')
         # 모먼트
-        elif 'moment' in i.attrs['href']:
+        elif 'moment' in i[0]:
             #print(i.attrs['href'].split('/')[1], i.attrs['href'].split('/')[3])
-            id = i.attrs['href'].split('/')[3]
-            x = i.get_text(strip=True).replace('artist', '')
+            id = i[0].split('/')[3]
+            x = i[1].replace('artist', '')
             if '모먼트' in x:
                 #print(x[x.index("모먼트")::])
                 content = x[x.index("모먼트")::].replace('\n', '')
@@ -163,7 +163,7 @@ def new_notification(noti, data):
                 #print(x[x.index("댓글에")::])
                 content = x[x.index("댓글에")::].replace('\n', '')
         #잠깐 주석
-        #print(id, content, x)
+        #print('line166:', id, content, x)
         db.insert_noti(id, content, x)
 
         if id+content != '':
@@ -191,7 +191,6 @@ async def send_msg(id, msg):
 time.sleep(2)
 noti_button = driver.find_element(By.CSS_SELECTOR,
                                   "#root > div.App > div > div.GlobalLayoutView_header__1UkFL > header > div > div.HeaderView_action__QDUUD > div > button")
-
 
 
 while 1:
@@ -223,12 +222,12 @@ while 1:
                                               "#root > div.App > div > div.GlobalLayoutView_header__1UkFL "
                                               "> header > div > div.HeaderView_action__QDUUD "
                                               "> div.HeaderNotificationWrapperView_notification__hCLgg > button")
-            time.sleep(5)
+            time.sleep(3)
             noti_button.click()
-            time.sleep(5)
+            time.sleep(3)
             noti_button.click()
-    time.sleep(2)
     try:
+        time.sleep(2)
         data = driver.find_element(By.CSS_SELECTOR,
                                "#root > div.App > div > div.GlobalLayoutView_header__1UkFL > header > div > div.HeaderView_action__QDUUD > div.HeaderNotificationWrapperView_notification__hCLgg > div > div > div.HeaderNotificationView_notification_area__oJsnB > div > div:nth-child(1) > ul > li:nth-child(1) > a > div.HeaderNotificationListView_notification_content_wrap__\+MRNf > div > div.HeaderNotificationListView_notification_content__g\+RAu > span")
     except:
