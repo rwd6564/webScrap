@@ -47,7 +47,7 @@ password = driver.find_element(By.CSS_SELECTOR,
                                '#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-d0f94a43-0.bCrkf > div > div.sc-ed52fcbe-8.eoxMAH > input').send_keys("wldms6564!")
 
 
-token = "7129846223:AAFd5Eqmf3oT8wNrYhDWMlUvsDVCaLRMPkw"
+token = "본인 토큰"
 count = 0
 namechange = 0
 # 붙여넣기로 로그인
@@ -64,8 +64,8 @@ def copy_input(element, input):
 #     login_button.click()
 try:
     #print('=====except=======문')
-    # copy_input(email, "5845434@gmail.com")
-    # copy_input(password, "wldms6564!")
+    # copy_input(email, "본인이메일")
+    # copy_input(password, "본인비밀번호")
     login_button = driver.find_element(By.CSS_SELECTOR,
                                        "#__next > div > div.sc-8ab46e1a-2.eZEkTN > div > form > div.sc-58a7e114-0.cqmXWr > button")
     login_button.click()
